@@ -1,0 +1,5 @@
+Model,CV ROC-AUC,Test Accuracy,Test Precision,Test Recall,Test F1,Test ROC-AUC,Brier Score,False Negatives,False Positives
+Logistic Regression,0.9193,0.9103,0.7778,0.5833,0.6667,0.9798,0.0522,5,2
+Support Vector Machine,0.9236,0.9103,0.6667,0.8333,0.7407,0.9747,0.0496,2,5
+XGBoost,0.9148,0.9103,0.7778,0.5833,0.6667,0.9457,0.0708,5,2
+Random Forest,0.9327,0.8974,0.75,0.5,0.6,0.9337,0.0819,6,2

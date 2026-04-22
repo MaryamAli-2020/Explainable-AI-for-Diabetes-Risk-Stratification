@@ -1,0 +1,15 @@
+Feature,Importance,ImportanceType
+Glucose,0.7272593354160957,absolute_coefficient
+Age,0.4076385731852631,absolute_coefficient
+SystolicBP,0.24535498299063782,absolute_coefficient
+CholHDLRatio,0.17046403480703418,absolute_coefficient
+Cholesterol,0.16817695682994835,absolute_coefficient
+Height,0.13100810233637014,absolute_coefficient
+BMI,0.12090495265712635,absolute_coefficient
+HDLChol,0.10780474470195146,absolute_coefficient
+Gender,0.08219307144606669,absolute_coefficient
+WaistHipRatio,0.08005273135917142,absolute_coefficient
+Weight,0.04789412553341319,absolute_coefficient
+Hip,0.036609099532988194,absolute_coefficient
+DiastolicBP,0.03345238184771735,absolute_coefficient
+Waist,0.017808269992053826,absolute_coefficient

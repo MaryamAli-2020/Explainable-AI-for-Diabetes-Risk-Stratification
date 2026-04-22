@@ -1,0 +1,16 @@
+Feature,Description
+Cholesterol,Total cholesterol measurement used as a lipid-risk indicator.
+Glucose,Blood glucose measurement used as a predictor in classification and as the target in regression.
+HDLChol,High-density lipoprotein cholesterol measurement.
+CholHDLRatio,Ratio of Cholesterol to HDLChol used to summarize lipid balance and atherogenic risk.
+Age,Patient age in years.
+Gender,Recorded gender category encoded during preprocessing.
+Height,Patient height in inches.
+Weight,Patient weight in pounds.
+BMI,Body mass index derived from height and weight as an adiposity marker.
+SystolicBP,Systolic blood pressure in mmHg.
+DiastolicBP,Diastolic blood pressure in mmHg.
+Waist,Waist circumference in inches as a marker of central adiposity.
+Hip,Hip circumference in inches.
+WaistHipRatio,"Ratio of Waist to Hip circumference, reflecting body-fat distribution."
+Outcome,Binary diabetes status label where 1 denotes Diabetes and 0 denotes No diabetes.

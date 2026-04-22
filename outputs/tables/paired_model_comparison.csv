@@ -1,0 +1,2 @@
+Model A,Model B,Median ROC-AUC (A),Median ROC-AUC (B),Wilcoxon Statistic,p-Value
+Logistic Regression,Support Vector Machine,0.9134615384615384,0.9182389937106918,22.5,0.05947202707400472

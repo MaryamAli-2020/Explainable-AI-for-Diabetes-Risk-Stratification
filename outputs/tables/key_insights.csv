@@ -1,0 +1,6 @@
+Insight,Finding,Healthcare implication
+Best classifier,Logistic Regression achieved the highest held-out ROC-AUC (0.980).,"Use this model as the primary predictive candidate, then evaluate thresholding for screening safety."
+Top predictive features,"Glucose, Age, SystolicBP",These variables deserve close attention in clinical assessment and model monitoring.
+Threshold recommendation,A screening-oriented threshold near 0.20 offers recall 1.000 and precision 0.706.,Recall-sensitive deployment may be preferable when missed high-risk patients are costly.
+Best regression model,Linear Regression achieved RMSE 48.94 and R2 0.247 for Glucose prediction.,Nonlinear estimation can support supportive analytics when a direct Glucose reading is unavailable.
+Cluster structure,"Cluster 0 represents a higher-risk older hyperglycemic profile, whereas Cluster 1 represents a lower-risk younger normoglycemic profile.","Latent phenotypes can guide targeted follow-up, education, and stratified intervention design."

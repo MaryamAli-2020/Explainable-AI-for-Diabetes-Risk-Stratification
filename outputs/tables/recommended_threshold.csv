@@ -1,0 +1,2 @@
+Threshold,Precision,Recall,F1 Score,Specificity,False Negatives,False Positives
+0.2,0.7058823529411765,1.0,0.8275862068965517,0.9242424242424242,0.0,5.0

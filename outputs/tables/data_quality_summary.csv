@@ -1,0 +1,16 @@
+Feature,Data Type,Raw Missing,Zero-Value Candidates,Missing After Cleaning,Missing Percentage
+Cholesterol,int64,0,0,0,0.0
+Glucose,int64,0,0,0,0.0
+HDLChol,int64,0,0,0,0.0
+CholHDLRatio,float64,0,0,0,0.0
+Age,int64,0,0,0,0.0
+Gender,str,0,0,0,0.0
+Height,int64,0,0,0,0.0
+Weight,int64,0,0,0,0.0
+BMI,float64,0,0,0,0.0
+SystolicBP,int64,0,0,0,0.0
+DiastolicBP,int64,0,0,0,0.0
+Waist,int64,0,0,0,0.0
+Hip,int64,0,0,0,0.0
+WaistHipRatio,float64,0,0,0,0.0
+Outcome,int64,0,0,0,0.0

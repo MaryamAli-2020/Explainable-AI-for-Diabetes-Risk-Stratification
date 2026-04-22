@@ -1,0 +1,4 @@
+Model,CV Neg-RMSE,Test MAE,Test MSE,Test RMSE,Test R2
+Linear Regression,-50.4232,33.6808,2395.2627,48.9414,0.2471
+Random Forest Regressor,-49.5092,33.995,2569.7449,50.6927,0.1922
+Gradient Boosting Regressor,-50.8756,34.4129,2700.1885,51.9633,0.1512
