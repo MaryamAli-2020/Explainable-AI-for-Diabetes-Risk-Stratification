@@ -4,7 +4,7 @@ This project assesses recorded diabetes status in the Kaggle dataset "Predict Di
 
 ## Project layout
 
-```text
+```
 diabetes-mini-study/
   data/raw/diabetes.csv
   notebooks/01_diabetes_healthcare_analytics.ipynb
@@ -18,52 +18,62 @@ diabetes-mini-study/
 
 ## Dataset setup
 
-1. Download the Kaggle dataset from [Predict Diabetes Based on Diagnostic Measures](https://www.kaggle.com/datasets/houcembenmansour/predict-diabetes-based-on-diagnostic-measures).
+1. Download the Kaggle dataset from:
+   https://www.kaggle.com/datasets/houcembenmansour/predict-diabetes-based-on-diagnostic-measures
 2. Save the CSV file as `data/raw/diabetes.csv`.
 
-The code assumes the diagnostic-measures schema in your Kaggle CSV:
+The dataset should include the following fields:
 
-- `Cholesterol`
-- `Glucose`
-- `HDLChol`
-- `CholHDLRatio`
-- `Age`
-- `Gender`
-- `Height`
-- `Weight`
-- `BMI`
-- `SystolicBP`
-- `DiastolicBP`
-- `Waist`
-- `Hip`
-- `WaistHipRatio`
-- `Outcome`
+- Cholesterol
+- Glucose
+- HDLChol
+- CholHDLRatio
+- Age
+- Gender
+- Height
+- Weight
+- BMI
+- SystolicBP
+- DiastolicBP
+- Waist
+- Hip
+- WaistHipRatio
+- Outcome
 
-## Environment setup
+## Environment Setup
 
-The machine used to scaffold this project did not expose a system-wide `python` or `jupyter` command, so the notebook is designed to run with the bundled Codex Python runtime or a local virtual environment created from it.
+This project is designed to be reproducible using a standard Python environment.
 
-### Option 1: create a local virtual environment
+### Option 1: Virtual Environment (Recommended)
 
-```powershell
-& "C:\Users\mhral\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m jupyter lab
+```
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+jupyter lab
 ```
 
-### Option 2: install directly into the bundled runtime
+### Option 2: Conda Environment
 
-```powershell
-& "C:\Users\mhral\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -m pip install -r requirements.txt
-& "C:\Users\mhral\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -m jupyter lab
+```
+conda create -n diabetes-study python=3.10 -y
+conda activate diabetes-study
+pip install -r requirements.txt
+jupyter lab
 ```
 
-## Running the notebook
+## Running the Notebook
 
-1. Open `notebooks/01_diabetes_healthcare_analytics.ipynb`.
-2. Run all cells from top to bottom.
-3. Generated figures, tables, and model artifacts will be saved automatically under `outputs/`.
+1. Open `notebooks/01_diabetes_healthcare_analytics.ipynb`
+2. Run all cells from top to bottom
+3. Outputs will be saved automatically in:
+
+```
+outputs/figures/
+outputs/tables/
+outputs/models/
+```
 
 ## Reviewer revision analyses
 
@@ -124,18 +134,24 @@ Random Forest was selected in four folds and SVM in one. Thresholds ranged from
 0.45. Run `test_nested_isolation.py` for a small synthetic regression test that
 checks training/validation separation and invariance to held-out test labels.
 
-## Research Outputs
+## Outputs Produced
 
-- Publication-style figures at 300 dpi
+- Publication-style figures (300 DPI)
 - Classification and regression comparison tables
-- Cluster profiles and cluster narratives
-- Threshold tuning and calibration outputs
-- Explainability artifacts with SHAP when installed, or permutation importance fallback
+- Cluster profiles and clinical narratives
+- Threshold tuning and calibration plots
+- Explainability outputs (SHAP or permutation importance)
 
-## Notes for interpretation
+## Notes for Interpretation
 
-- The loader automatically converts comma-style decimal strings such as `22,5` and `0,84` into numeric values.
-- The target labels `Diabetes` and `No diabetes` are standardized to binary `Outcome` values.
-- The notebook audits suspicious zeros across numeric clinical measurements and converts them to missing values before imputation.
-- Outliers are documented but not automatically removed because extreme patients may still be clinically meaningful.
-- Classification model selection prioritizes ROC-AUC, while deployment discussion emphasizes recall because false negatives are risky in screening workflows.
+- Comma-style decimal values (e.g., 22,5) are automatically converted to numeric format
+- Target labels are standardized to binary Outcome values
+- Suspicious zero values are treated as missing and imputed
+- Outliers are retained for clinical relevance
+- Model selection prioritizes ROC-AUC; recall is emphasized for screening safety
+
+## Reproducibility Notes
+
+- All dependencies are listed in `requirements.txt`
+- The workflow is deterministic when random seeds are fixed
+- Compatible with local and cloud-based notebook environments (Jupyter, Kaggle, Colab)
