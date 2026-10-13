@@ -18,3 +18,6 @@ src/__pycache__/
 *.out
 *.synctex.gz
 *.toc
+.tools/
+*.xdv
+reports/.layout_qa/

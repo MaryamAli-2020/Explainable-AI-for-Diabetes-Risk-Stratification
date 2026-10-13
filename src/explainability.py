@@ -61,7 +61,7 @@ def compute_shap_package(
         index=explanation_features.index,
     )
 
-    explainer = shap.TreeExplainer(model)
+    explainer = shap.TreeExplainer(model, feature_perturbation="tree_path_dependent", model_output="raw")
     raw_values = explainer.shap_values(transformed_explanation_frame)
     expected_value = explainer.expected_value
 

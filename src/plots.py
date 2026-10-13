@@ -41,7 +41,7 @@ def plot_zero_audit(audit_frame: pd.DataFrame) -> plt.Figure:
 def plot_class_distribution(frame: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.countplot(data=frame, x="Outcome", palette="viridis", ax=ax)
-    ax.set_title("Diabetes Outcome Distribution")
+    ax.set_title(f"Diabetes Outcome Distribution (n={len(frame)})")
     ax.set_xlabel("Outcome")
     ax.set_ylabel("Patients")
     ax.set_xticklabels(["No Diabetes", "Diabetes"])
@@ -59,7 +59,7 @@ def plot_histograms(frame: pd.DataFrame, columns: list[str]) -> plt.Figure:
         axis.set_title(f"{column} distribution")
     for axis in axes[len(numeric_columns) :]:
         axis.axis("off")
-    fig.suptitle("Feature Distributions by Diabetes Status", y=1.02)
+    fig.suptitle(f"Feature Distributions by Diabetes Status (n={len(frame)})", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -76,7 +76,7 @@ def plot_boxplots(frame: pd.DataFrame, columns: list[str]) -> plt.Figure:
         axis.set_xticklabels(["No Diabetes", "Diabetes"])
     for axis in axes[len(numeric_columns) :]:
         axis.axis("off")
-    fig.suptitle("Boxplots Highlighting Outliers and Group Separation", y=1.02)
+    fig.suptitle(f"Distributions and Outliers by Outcome (n={len(frame)})", y=1.02)
     fig.tight_layout()
     return fig
 
@@ -119,9 +119,10 @@ def plot_roc_curves(runs: list[dict[str, object]]) -> plt.Figure:
         roc_data = run["RocCurve"]
         ax.plot(roc_data["fpr"], roc_data["tpr"], label=f"{run['Model']} (AUC={run['ROCAUC']:.3f})")
     ax.plot([0, 1], [0, 1], linestyle="--", color="grey")
-    ax.set_title("ROC Curve Comparison")
+    counts = runs[0]["Counts"]
+    ax.set_title(f"Held-out ROC Curves (n={sum(counts.values())}; positive={counts['tp'] + counts['fn']})")
     ax.set_xlabel("False Positive Rate")
-    ax.set_ylabel("True Positive Rate")
+    ax.set_ylabel("Sensitivity (true positive rate)")
     ax.legend(loc="lower right")
     return fig
 
@@ -137,7 +138,7 @@ def plot_calibration_curves(runs: list[dict[str, object]]) -> plt.Figure:
             label=f"{run['Model']} (Brier={run['BrierScore']:.3f})",
         )
     ax.plot([0, 1], [0, 1], linestyle="--", color="grey", label="Perfect calibration")
-    ax.set_title("Calibration Curves")
+    ax.set_title(f"Held-out Calibration (n={sum(runs[0]['Counts'].values())}; quantile bins=10)")
     ax.set_xlabel("Mean predicted probability")
     ax.set_ylabel("Observed event rate")
     ax.legend(loc="upper left")
@@ -171,13 +172,14 @@ def plot_feature_importance(importance_frame: pd.DataFrame, title: str) -> plt.F
     return fig
 
 
-def plot_threshold_sweep(threshold_frame: pd.DataFrame, recommended_threshold: float) -> plt.Figure:
+def plot_threshold_sweep(threshold_frame: pd.DataFrame, recommended_threshold: float, sample_count: int | None = None) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(threshold_frame["Threshold"], threshold_frame["Recall"], label="Recall", marker="o")
     ax.plot(threshold_frame["Threshold"], threshold_frame["Precision"], label="Precision", marker="o")
     ax.plot(threshold_frame["Threshold"], threshold_frame["F1Score"], label="F1 score", marker="o")
     ax.axvline(recommended_threshold, linestyle="--", color="black", label=f"Recommended={recommended_threshold:.2f}")
-    ax.set_title("Threshold Tuning for Screening-Oriented Deployment")
+    suffix = f" (n={sample_count})" if sample_count is not None else ""
+    ax.set_title("Training-only Out-of-fold Threshold Selection" + suffix)
     ax.set_xlabel("Classification threshold")
     ax.set_ylabel("Metric value")
     ax.legend(loc="best")
@@ -231,14 +233,14 @@ def plot_regression_diagnostics(actual: pd.Series, predictions, residuals: pd.Se
     max_value = max(actual.max(), predictions.max())
     axes[0].plot([min_value, max_value], [min_value, max_value], linestyle="--", color="grey")
     axes[0].set_title("Actual vs Predicted Glucose")
-    axes[0].set_xlabel("Actual glucose")
-    axes[0].set_ylabel("Predicted glucose")
+    axes[0].set_xlabel("Actual Glucose (dataset units)")
+    axes[0].set_ylabel("Predicted Glucose (dataset units)")
 
     axes[1].scatter(predictions, residuals, alpha=0.7)
     axes[1].axhline(0, linestyle="--", color="grey")
     axes[1].set_title("Residual Plot")
-    axes[1].set_xlabel("Predicted glucose")
-    axes[1].set_ylabel("Residual")
+    axes[1].set_xlabel("Predicted Glucose (dataset units)")
+    axes[1].set_ylabel("Actual minus predicted (dataset units)")
     fig.tight_layout()
     return fig
 
@@ -264,5 +266,7 @@ def plot_pca_clusters(clustered_frame: pd.DataFrame) -> plt.Figure:
         palette="tab10",
         ax=ax,
     )
-    ax.set_title("PCA Projection of Patient Clusters")
+    ax.set_title(f"PCA Projection of Patient Clusters (n={len(clustered_frame)})")
+    ax.set_xlabel("Principal component 1 (unitless)")
+    ax.set_ylabel("Principal component 2 (unitless)")
     return fig

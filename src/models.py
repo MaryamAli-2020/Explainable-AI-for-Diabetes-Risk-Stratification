@@ -23,7 +23,7 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.model_selection import GridSearchCV, RepeatedKFold, RepeatedStratifiedKFold, cross_val_score
+from sklearn.model_selection import GridSearchCV, RepeatedKFold, RepeatedStratifiedKFold, StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 
 from .config import CLASSIFICATION_PRIMARY_METRIC, CV_REPEATS, CV_SPLITS, RANDOM_STATE, REGRESSION_PRIMARY_METRIC
@@ -252,6 +252,100 @@ def evaluate_classifier(
     }
 
 
+
+def evaluate_classifier_at_threshold(
+    fitted_model: object,
+    features: pd.DataFrame,
+    target: pd.Series,
+    threshold: float,
+) -> dict[str, object]:
+    """Evaluate a fitted classifier at a fixed, pre-selected probability threshold."""
+    probabilities = get_positive_class_scores(fitted_model, features)
+    predictions = (probabilities >= threshold).astype(int)
+    confusion = confusion_matrix(target, predictions)
+    tn, fp, fn, tp = confusion.ravel()
+    return {
+        "Threshold": float(threshold),
+        "Accuracy": accuracy_score(target, predictions),
+        "Precision": precision_score(target, predictions, zero_division=0),
+        "Recall": recall_score(target, predictions, zero_division=0),
+        "F1Score": f1_score(target, predictions, zero_division=0),
+        "ROCAUC": roc_auc_score(target, probabilities),
+        "BrierScore": float(np.mean((probabilities - target.to_numpy()) ** 2)),
+        "ConfusionMatrix": confusion,
+        "Probabilities": probabilities,
+        "Predictions": predictions,
+        "Counts": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
+    }
+
+
+def generate_nested_oof_probabilities(
+    name: str,
+    spec: ModelSpec,
+    train_features: pd.DataFrame,
+    train_target: pd.Series,
+    feature_names: list[str],
+) -> np.ndarray:
+    """Generate training-only out-of-fold probabilities for threshold selection.
+
+    Each outer validation fold is predicted by a model whose hyperparameters were
+    tuned only on the corresponding outer-training fold. The held-out test set is
+    never used here.
+    """
+    outer_cv = StratifiedKFold(
+        n_splits=CV_SPLITS,
+        shuffle=True,
+        random_state=RANDOM_STATE,
+    )
+    oof_probabilities = np.full(len(train_target), np.nan, dtype=float)
+
+    for outer_train_idx, outer_valid_idx in outer_cv.split(train_features, train_target):
+        inner_search = fit_classifier_search(
+            name,
+            spec,
+            train_features.iloc[outer_train_idx],
+            train_target.iloc[outer_train_idx],
+            feature_names,
+        )
+        oof_probabilities[outer_valid_idx] = get_positive_class_scores(
+            inner_search.best_estimator_,
+            train_features.iloc[outer_valid_idx],
+        )
+
+    if np.isnan(oof_probabilities).any():
+        raise RuntimeError("Failed to generate complete out-of-fold probabilities.")
+    return oof_probabilities
+
+
+def threshold_sweep_from_probabilities(
+    probabilities: np.ndarray,
+    target: pd.Series,
+    thresholds: Iterable[float] | None = None,
+) -> pd.DataFrame:
+    """Evaluate candidate thresholds from precomputed probabilities."""
+    if thresholds is None:
+        thresholds = np.linspace(0.1, 0.9, 17)
+    rows = []
+    target_array = target.to_numpy()
+    for threshold in thresholds:
+        predictions = (probabilities >= threshold).astype(int)
+        tn, fp, fn, tp = confusion_matrix(target_array, predictions).ravel()
+        precision = precision_score(target_array, predictions, zero_division=0)
+        recall = recall_score(target_array, predictions, zero_division=0)
+        rows.append(
+            {
+                "Threshold": round(float(threshold), 2),
+                "Precision": precision,
+                "Recall": recall,
+                "F1Score": f1_score(target_array, predictions, zero_division=0),
+                "Specificity": tn / (tn + fp) if (tn + fp) else np.nan,
+                "FalseNegatives": int(fn),
+                "FalsePositives": int(fp),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def run_classification_experiment(
     train_features: pd.DataFrame,
     test_features: pd.DataFrame,
@@ -296,11 +390,11 @@ def run_classification_experiment(
                 for run in runs
             ]
         )
-        .sort_values(["Test ROC-AUC", "Test Recall"], ascending=[False, False])
+        .sort_values("CV ROC-AUC", ascending=False)
         .reset_index(drop=True)
     )
 
-    best_run = max(runs, key=lambda entry: (entry["ROCAUC"], entry["Recall"]))
+    best_run = max(runs, key=lambda entry: entry["CVBestScore"])
     best_smote_run = None
     best_smote_search = fit_classifier_search(
         best_run["Model"],
@@ -320,16 +414,36 @@ def run_classification_experiment(
         **best_smote_eval,
     }
 
-    threshold_table = threshold_sweep(best_run["BestEstimator"], test_features, test_target)
+    # Select the screening threshold from TRAINING-ONLY nested out-of-fold predictions.
+    oof_probabilities = generate_nested_oof_probabilities(
+        best_run["Model"],
+        best_run["Spec"],
+        train_features,
+        train_target,
+        feature_names,
+    )
+    threshold_table = threshold_sweep_from_probabilities(oof_probabilities, train_target)
     recommended_threshold = recommend_screening_threshold(threshold_table)
+    selected_threshold = float(recommended_threshold["Threshold"])
+
+    # Only after the threshold is locked do we evaluate that operating point on the held-out test set.
+    threshold_test_evaluation = evaluate_classifier_at_threshold(
+        best_run["BestEstimator"],
+        test_features,
+        test_target,
+        selected_threshold,
+    )
+
+    # Use training data for any permutation-based feature-importance fallback so that
+    # test data do not influence model interpretation choices.
     feature_importance = extract_feature_importance(
         best_run["BestEstimator"],
         feature_names,
-        test_features,
-        test_target,
+        train_features,
+        train_target,
     )
     tree_candidates = [run for run in runs if run["Spec"].tree_based]
-    best_tree_run = max(tree_candidates, key=lambda entry: (entry["ROCAUC"], entry["Recall"]))
+    best_tree_run = max(tree_candidates, key=lambda entry: entry["CVBestScore"])
 
     stats_result = paired_model_comparison(runs, train_features, train_target)
 
@@ -341,6 +455,8 @@ def run_classification_experiment(
         "best_smote_run": best_smote_run,
         "threshold_table": threshold_table,
         "recommended_threshold": recommended_threshold,
+        "threshold_test_evaluation": threshold_test_evaluation,
+        "oof_probabilities": oof_probabilities,
         "feature_importance": feature_importance,
         "searches": searches,
         "paired_test": stats_result,
@@ -479,7 +595,7 @@ def paired_model_comparison(
     train_features: pd.DataFrame,
     train_target: pd.Series,
 ) -> dict[str, object]:
-    baseline_runs = sorted(runs, key=lambda entry: entry["ROCAUC"], reverse=True)[:2]
+    baseline_runs = sorted(runs, key=lambda entry: entry["CVBestScore"], reverse=True)[:2]
     if len(baseline_runs) < 2:
         return {"message": "Not enough models were available for paired comparison."}
 
@@ -589,10 +705,10 @@ def run_regression_experiment(
                 for run in runs
             ]
         )
-        .sort_values(["Test RMSE", "Test R2"], ascending=[True, False])
+        .sort_values("CV Neg-RMSE", ascending=False)
         .reset_index(drop=True)
     )
-    best_run = min(runs, key=lambda entry: entry["RMSE"])
+    best_run = max(runs, key=lambda entry: entry["CVNegRMSE"])
     return {
         "runs": runs,
         "comparison_table": comparison_table,
